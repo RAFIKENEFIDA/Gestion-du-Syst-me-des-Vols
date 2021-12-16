@@ -112,28 +112,35 @@ const route=(req,res)=>{
             var obj;
             util.inspect(obj = {fields: fields, files: files})
             var id;
-            console.log(fields);
             
             id=await get.get(queries.InsertClient(obj.fields));
+            
             console.log(id.insertId);
-         if(await get.get(queries.InsertReservation({id:obj.fields.id,client_id:id.insertId})))   {
+         
+            var code= Math.random().toString(36).substr(2) + obj.fields.nom.split("@", 1);
+            console.log(code)
 
+          var id_reservation=  await get.get(queries.InsertReservation({id:obj.fields.id,client_id:id.insertId,code:code}))
+          var detailReservation= await get.get(queries.RecupereVol(id_reservation.insertId))
+           console.log(detailReservation);
 
-            var nodemailer = require('nodemailer');
-
+          if(id_reservation){
+          var nodemailer = require('nodemailer');
             var transporter = nodemailer.createTransport({
               service: 'gmail',
               auth: {
                 user: 'testcoding975@gmail.com',
                 pass: 'testCoding1998'
               }
-            });
-            
+            });            
             var mailOptions = {
               from: 'testcoding975@gmail.com',
               to: 'rafikcoding@gmail.com',
-              subject: 'Confirmation Reservation du vol',
-              text: 'That was easy!'
+              subject: 'Air Maroc, Detail Sur Votre Reservation ',
+              text: 'Salut  ' + detailReservation[0].nom+ 
+               ' Vous êtes reserver une vols  :  depart de   '+ detailReservation[0].depart+ ' à '+detailReservation[0].time_depart + ' vers ' + detailReservation[0].arrivee +  ' à  ' + detailReservation[0].time_arrivee+
+               ' Prix ' + detailReservation[0].prix+
+               ' Votre code de reference est :' + detailReservation[0].code
             };
             
             transporter.sendMail(mailOptions, function(error, info){
@@ -143,12 +150,13 @@ const route=(req,res)=>{
                 console.log('Email sent: ' + info.response);
               }
             });
-         }
-            //   console.log("ccc",AllEscales);
-            // res.writeHead(200, { "Content-Type": "text/html" });
-            // let htmlContent = fs.readFileSync('./views/index.ejs', 'utf8');
-            // let htmlRenderized = ejs.render(htmlContent,{vols});
-            // res.end(htmlRenderized);
+          }
+      
+         
+            res.writeHead(200, { "Content-Type": "text/html" });
+            let htmlContent = fs.readFileSync('./views/index.ejs', 'utf8');
+            let htmlRenderized = ejs.render(htmlContent,{vols});
+            res.end(htmlRenderized);
            
         })
     }
